@@ -1,0 +1,157 @@
+---
+- name: Подготовка виртуальных машин для работы с ansible
+  hosts: all
+  tasks:
+    - name: Установка phyton с помощью pakage
+      ansible.builtin.package:
+        name: python3
+        state: present
+
+- name: Установка clickhouse
+  hosts: clickhouse
+  become: true
+  tasks:
+    - name: Установка необходимых зависимостей
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: true
+
+    - name: Загрузка GPG ключа ClickHouse
+      ansible.builtin.get_url:
+        url: https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key
+        dest: /tmp/repomd.xml.key
+        mode: '0644'
+
+    - name: Конвертация GPG ключа
+      ansible.builtin.command: gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg /tmp/repomd.xml.key
+      args:
+        creates: /usr/share/keyrings/clickhouse-keyring.gpg
+
+    - name: Получение архитектуры
+      ansible.builtin.setup:
+        gather_subset:
+          - hardware
+
+    - name: Добавление репозитория ClickHouse
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/clickhouse.list
+        content: |
+          deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch={{ ansible_facts['architecture'] }}] https://packages.clickhouse.com/deb stable main
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Обновление списка пакетов
+      ansible.builtin.apt:
+        update_cache: true
+      changed_when: false
+
+    - name: Установка ClickHouse
+      ansible.builtin.apt:
+        name:
+          - clickhouse-server
+          - clickhouse-client
+        state: present
+
+    - name: Запуск ClickHouse-сервиса
+      ansible.builtin.service:
+        name: clickhouse-server
+        state: started
+        enabled: true
+
+    - name: Создание базы данных logs
+      ansible.builtin.command: "clickhouse-client -q 'CREATE DATABASE IF NOT EXISTS logs;'"
+      register: create_db
+      changed_when: false
+
+- name: Установка и конфигурация ввектора
+  hosts: vector
+  become: true
+  tasks:
+    - name: Установка вектора
+      ansible.builtin.apt:
+        deb: https://packages.timber.io/vector/0.33.0/vector_0.33.0-1_amd64.deb
+        state: present
+    - name: Применение конфига из шаблона
+      ansible.builtin.template:
+        src: templates/vector.toml.j2
+        dest: /etc/vector/vector.toml
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart vector
+
+  handlers:
+    - name: Restart vector
+      ansible.builtin.service:
+        name: vector
+        state: restarted
+
+- name: Установка nginx
+  hosts: lighthouse
+  become: true
+  tasks:
+    - name: Установка nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+    - name: Настройка nginx
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        mode: '0644'
+      notify: Reload Nginx
+
+    - name: Запуск nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+
+- name: Установка lighthouse
+  hosts: lighthouse
+  become: true
+  tasks:
+    - name: Установка зависимостей для lighthouse
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Проверка, добавлена ли /var/www/lighthouse как безопасная директория Git # noqa command-instead-of-module
+      ansible.builtin.command: git config --global --get-all safe.directory
+      register: git_safe_dirs
+      changed_when: false
+      failed_when: false
+
+    - name: Добавление /var/www/lighthouse в список безопасных директорий git (если нужно) # noqa command-instead-of-module
+      ansible.builtin.command: git config --global --add safe.directory /var/www/lighthouse
+      when: "'/var/www/lighthouse' not in git_safe_dirs.stdout_lines"
+      changed_when: false
+
+    - name: Клонирование lighthouse из репозитория
+      ansible.builtin.git:
+        repo: https://github.com/VKCOM/lighthouse.git
+        dest: /var/www/lighthouse
+        version: master
+        update: true
+
+    - name: Установка прав доступа на директорию lighthouse
+      ansible.builtin.file:
+        path: /var/www/lighthouse
+        owner: www-data
+        group: www-data
+        state: directory
+        recurse: true
+      changed_when: false
