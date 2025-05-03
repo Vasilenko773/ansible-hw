@@ -1,0 +1,32 @@
+---
+- name: Подготовка виртуальных машин для работы с ansible
+  hosts: all
+  tasks:
+    - name: Установка phyton с помощью pakage
+      ansible.builtin.package:
+        name: python3
+        state: present
+
+- name: Установка clickhouse
+  hosts: clickhouse
+  become: true
+  roles:
+    - clickhouse
+
+- name: Установка и конфигурация ввектора
+  hosts: vector
+  become: true
+  roles:
+    - vector
+
+- name: Установка nginx
+  hosts: lighthouse
+  become: true
+  roles:
+    - nginx
+
+- name: Установка lighthouse
+  hosts: lighthouse
+  become: true
+  roles:
+    - lighthouse

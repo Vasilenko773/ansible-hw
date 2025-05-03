@@ -1,0 +1,20 @@
+---
+- src: git@github.com:Vasilenko773/ansible-hw.git
+  scm: git
+  version: master
+  name: clickhouse
+
+- src: git@github.com:Vasilenko773/ansible-hw.git
+  scm: git
+  version: vector
+  name: vector
+
+- src: git@github.com:Vasilenko773/ansible-hw.git
+  scm: git
+  version: nginx
+  name: nginx
+
+- src: git@github.com:Vasilenko773/ansible-hw.git
+  scm: git
+  version: lighthouse
+  name: lighthouse
