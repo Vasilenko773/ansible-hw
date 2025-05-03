@@ -1,0 +1,14 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Установка вектора
+  ansible.builtin.apt:
+    deb: https://packages.timber.io/vector/0.33.0/vector_0.33.0-1_amd64.deb
+    state: present
+- name: Применение конфига из шаблона
+  ansible.builtin.template:
+    src: templates/vector.toml.j2
+    dest: /etc/vector/vector.toml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart vector
