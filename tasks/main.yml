@@ -1,0 +1,59 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Установка необходимых зависимостей
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Загрузка GPG ключа ClickHouse
+  ansible.builtin.get_url:
+    url: https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key
+    dest: /tmp/repomd.xml.key
+    mode: '0644'
+
+- name: Конвертация GPG ключа
+  ansible.builtin.command: gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg /tmp/repomd.xml.key
+  args:
+    creates: /usr/share/keyrings/clickhouse-keyring.gpg
+
+- name: Получение архитектуры
+  ansible.builtin.setup:
+    gather_subset:
+      - hardware
+
+- name: Добавление репозитория ClickHouse
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/clickhouse.list
+    content: |
+      deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch={{ ansible_facts['architecture'] }}] https://packages.clickhouse.com/deb stable main
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Обновление списка пакетов
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+
+- name: Установка ClickHouse
+  ansible.builtin.apt:
+    name:
+      - clickhouse-server
+      - clickhouse-client
+    state: present
+
+- name: Запуск ClickHouse-сервиса
+  ansible.builtin.service:
+    name: clickhouse-server
+    state: started
+    enabled: true
+
+- name: Создание базы данных logs
+  ansible.builtin.command: "clickhouse-client -q 'CREATE DATABASE IF NOT EXISTS logs;'"
+  register: create_db
+  changed_when: false
