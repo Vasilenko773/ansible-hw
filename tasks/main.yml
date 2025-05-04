@@ -1,0 +1,19 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Установка nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+- name: Настройка nginx
+  ansible.builtin.template:
+    src: templates/nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: '0644'
+  notify: Reload Nginx
+
+- name: Запуск nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
