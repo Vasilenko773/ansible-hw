@@ -1,0 +1,33 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Установка зависимостей для lighthouse
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Проверка, добавлена ли /var/www/lighthouse как безопасная директория Git # noqa command-instead-of-module
+  ansible.builtin.command: git config --global --get-all safe.directory
+  register: git_safe_dirs
+  changed_when: false
+  failed_when: false
+
+- name: Добавление /var/www/lighthouse в список безопасных директорий git (если нужно) # noqa command-instead-of-module
+  ansible.builtin.command: git config --global --add safe.directory /var/www/lighthouse
+  when: "'/var/www/lighthouse' not in git_safe_dirs.stdout_lines"
+  changed_when: false
+
+- name: Клонирование lighthouse из репозитория
+  ansible.builtin.git:
+    repo: https://github.com/VKCOM/lighthouse.git
+    dest: /var/www/lighthouse
+    version: master
+    update: true
+
+- name: Установка прав доступа на директорию lighthouse
+  ansible.builtin.file:
+    path: /var/www/lighthouse
+    owner: www-data
+    group: www-data
+    state: directory
+    recurse: true
+  changed_when: false
