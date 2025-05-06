@@ -1,0 +1,29 @@
+---
+- name: Verify Vector Role
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Проверка, что конфигурационный файл vector существует
+      ansible.builtin.stat:
+        path: /etc/vector/vector.toml
+      register: vector_config
+
+    - name: Проверка наличия конфигурационного файла
+      ansible.builtin.assert:
+        that:
+          - vector_config.stat.exists
+        fail_msg: "Файл /etc/vector/vector.toml не найден"
+        success_msg: "Файл /etc/vector/vector.toml существует"
+
+    - name: Проверка, что процесс vector запущен
+      ansible.builtin.shell: pgrep -f vector
+      register: vector_process
+      changed_when: false
+      failed_when: vector_process.rc != 0
+
+    - name: Проверка успешности запуска vector
+      ansible.builtin.assert:
+        that:
+          - vector_process.rc == 0
+        fail_msg: "Процесс vector не запущен"
+        success_msg: "Процесс vector успешно запущен"
