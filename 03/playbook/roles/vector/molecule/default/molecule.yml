@@ -1,0 +1,13 @@
+---
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: docker.io/green773/custom-ubuntu-python3:latest
+    image_pull: true
+    pre_build_image: true
+    ansible_python_interpreter: /usr/bin/python3
+provisioner:
+  name: ansible
+verifier:
+  name: ansible

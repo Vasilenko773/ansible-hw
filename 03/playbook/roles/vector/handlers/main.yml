@@ -1,6 +1,4 @@
 #SPDX-License-Identifier: MIT-0
 ---
-- name: Restart vector
-  ansible.builtin.service:
-    name: vector
-    state: restarted
+# defaults file for vector
+
