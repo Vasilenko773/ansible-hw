@@ -1,0 +1,9 @@
+---
+- name: Run custom module on remote host
+  hosts: remotehost
+  gather_facts: false
+  tasks:
+    - name: Create a file using my custom module
+      file_writer:
+        path: /tmp/remote_custom_output.txt
+        content: "File created on remote host via custom module"

@@ -1,0 +1,5 @@
+---
+remotehost:
+  hosts:
+    remote_host:
+      ansible_host: 158.160.179.138
