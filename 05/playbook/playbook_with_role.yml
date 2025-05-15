@@ -1,0 +1,6 @@
+---
+- name: Run custom module on remote host
+  hosts: remotehost
+  gather_facts: false
+  roles:
+    - file_creator

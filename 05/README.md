@@ -182,15 +182,20 @@ if __name__ == '__main__':
 **Шаг 12.** Заполните всю документацию по collection, выложите в свой репозиторий, поставьте тег `1.0.0` на этот коммит.
 
 **Шаг 13.** Создайте .tar.gz этой collection: `ansible-galaxy collection build` в корневой директории collection.
+    ![Ответ1](./resource/task3.png)
 
 **Шаг 14.** Создайте ещё одну директорию любого наименования, перенесите туда single task playbook и архив c collection.
 
 **Шаг 15.** Установите collection из локального архива: `ansible-galaxy collection install <archivename>.tar.gz`.
 
+
 **Шаг 16.** Запустите playbook, убедитесь, что он работает.
+    ![Ответ1](./resource/task4.png)
 
 **Шаг 17.** В ответ необходимо прислать ссылки на collection и tar.gz архив, а также скриншоты выполнения пунктов 4, 6, 15 и 16.
+    [репозиторий](https://github.com/Vasilenko773/file_writer_ansible_module)
 
+        
 ## Необязательная часть
 
 1. Реализуйте свой модуль для создания хостов в Yandex Cloud.
